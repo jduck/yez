@@ -28,7 +28,6 @@ main(c, v)
    int wfc;
 #endif
    char *from = NULL, *to = NULL, *pass = NULL;
-   char ebuf[512];
    time_t start, end;
    nsock_t *nst;
    u_int ns_errno;
@@ -48,11 +47,11 @@ main(c, v)
    
    /* check for a port.. */
    if (!strchr(to, ':'))
-     to = nsock_inet_host(v[1], 6667);
+     to = (char *)nsock_inet_host((u_char *)v[1], 6667);
    
    /* initialize the nsock stuff.. */
    if (!(nst = nsock_connect_init(PF_INET, SOCK_STREAM,
-                      from, to,
+                      (u_char *)from, (u_char *)to,
 #ifdef NON_BLOCKING_CONNECTS
 				      NSF_NON_BLOCK,
 #else
