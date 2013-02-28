@@ -1,0 +1,6 @@
+[submodule "libircii"]
+	path = libircii
+	url = git@github.com:jduck/libircii.git
+[submodule "libnsock"]
+	path = libnsock
+	url = git@github.com:jduck/nsock.git
