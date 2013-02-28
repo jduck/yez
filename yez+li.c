@@ -6,8 +6,10 @@
 #include <time.h>
 #include <sys/time.h>
 
+#include <nsock/nsock.h>
+#include <nsock/errors.h>
+
 #include "libircii.h"
-#include "nsock_tcp.h"
 #include "break_line.h"
 #include "wfc.h"
 #include "hexdump.h"
@@ -29,7 +31,8 @@ main(c, v)
    char *from = NULL, *to = NULL;
    char ebuf[512];
    time_t start, end;
-   nsocktcp_t *nst;
+   nsock_t *nst;
+   u_int ns_errno;
    
    /* check out the args */
    if (c < 2)
@@ -44,31 +47,33 @@ main(c, v)
    
    /* check for a port.. */
    if (!strchr(to, ':'))
-     to = nsock_tcp_host(v[1], 6667);
+     to = nsock_inet_host(v[1], 6667);
    
    /* initialize the nsock stuff.. */
-   if (!(nst = nsock_tcp_init_connect(from, to,
+   if (!(nst = nsock_connect_init(PF_INET, SOCK_STREAM,
+                      from, to,
 #ifdef NON_BLOCKING_CONNECTS
-				      NSTCP_NON_BLOCK,
+				      NSF_NON_BLOCK,
 #else
-				      0,
+				      NSF_NONE,
 #endif
-				      ebuf, sizeof(ebuf))))
+				      &ns_errno)))
      {
-	fprintf(stderr, "connect_init failed: %s\n", ebuf);
+	fprintf(stderr, "connect_init failed: %s\n", nsock_strerror_full_n(ns_errno));
 	return 1;
      }
    
    /* try to connect */
    start = time(NULL);
-   s = nsock_tcp_connect(nst, 0);
-   if (s < 1)
+   s = nsock_connect_out(nst);
+   if (s != NSERR_SUCCESS &&
+       nst->ns_errno != NSERR_CONNECT_IN_PROGRESS)
      {
 	fprintf(stderr, "connect failed: %s\n", ebuf);
 	return 1;
      }
 #ifdef NON_BLOCKING_CONNECTS
-   wfc = wait_for_connect(s, start);
+   wfc = wait_for_connect(nst, start);
    if (wfc == -1)
      {
 	printf("Unable to connect to %s: %s\n", to, strerror(errno));
@@ -76,11 +81,11 @@ main(c, v)
      }
 #endif	
    end = time(NULL);
-   printf("Connection to %s successful on socket #%u (%lu secs).\n", to, s, end-start);
-   login(s, NULL);
+   printf("Connection to %s successful on socket #%u (%lu secs).\n", to, nst->sd, end-start);
+   login(nst->sd, NULL);
    printf("I think i'm logged in..\n");
-   talk(s);
-   close(s);
+   talk(nst->sd);
+   nsock_close(nst);
    return 0;
 }
 

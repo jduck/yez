@@ -2,14 +2,14 @@ CC = gcc
 
 LS_DIR = libnsock
 LS_CFLAGS = -I$(LS_DIR)
-LS_LDFLAGS = -lnsock -L$(LS_DIR)
+LS_LDFLAGS = -lnsock -L$(LS_DIR) -lssl -lcrypto
 
 CFLAGS = -g -Wall -I. $(LS_CFLAGS)
 LDFLAGS = $(LS_LDFLAGS)
 
-LI_DIR = ../libircii
+LI_DIR = libircii
 LI_CFLAGS = $(CFLAGS) -I$(LI_DIR) -DDEBUG
-LI_LDFLAGS = $(LDFLAGS) -lircii -L$(LI_DIR)
+LI_LDFLAGS = $(LDFLAGS) -lircii -L$(LI_DIR) -lssl -lcrypto
 
 all: yez yez+li
 
